@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soroban Dependency Sentinel — Supply-chain security for Soroban</title>
+  <meta name="description" content="Scan Soroban projects for CVEs and pony factor risks. Open-source CLI + GitHub Action.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+
+<header class="hero">
+  <div class="container">
+    <div class="badge">🛡️ Apache-2.0 · Open Source</div>
+    <h1>Soroban Dependency Sentinel</h1>
+    <p class="tagline">
+      Supply-chain security scanner for Soroban projects.
+      Detects CVEs in your Rust dependency tree, measures pony-factor risk,
+      and blocks CI when things go wrong.
+    </p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/developerfred/soroban-dependency-sentinel">
+        View on GitHub
+      </a>
+      <a class="btn secondary" href="https://crates.io/crates/soroban-dependency-sentinel">
+        Install from crates.io
+      </a>
+    </div>
+    <div class="install-snippet">
+      <code>cargo install soroban-dependency-sentinel</code>
+      <button class="copy" data-clipboard="cargo install soroban-dependency-sentinel" aria-label="Copy">📋</button>
+    </div>
+  </div>
+</header>
+
+<section class="features">
+  <div class="container">
+    <h2>Why Sentinel</h2>
+    <p class="section-lead">
+      Two systemic risks are not mitigated by any existing tool. Sentinel fills the gap.
+    </p>
+    <div class="grid">
+      <div class="card">
+        <div class="icon">🔍</div>
+        <h3>CVE detection</h3>
+        <p>Scans <code>Cargo.lock</code> against OSV.dev (RustSec mirror) with a 24h local cache and offline mode.</p>
+      </div>
+      <div class="card">
+        <div class="icon">👥</div>
+        <h3>Pony factor</h3>
+        <p>Resolves maintainer risk from three sources: PG Atlas → crates.io owners → local <code>git log</code>.</p>
+      </div>
+      <div class="card">
+        <div class="icon">📊</div>
+        <h3>Unified risk score</h3>
+        <p>Combines CVE severity and pony factor into a single score with actionable mitigation plans.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🚦</div>
+        <h3>CI gate</h3>
+        <p>Fails builds when risk crosses a threshold. Emits SARIF 2.1.0 for GitHub Code Scanning.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🔌</div>
+        <h3>Plugin system</h3>
+        <p>Auto-discovers <code>sentinel-plugin-*</code> executables. Extensible without touching the core.</p>
+      </div>
+      <div class="card">
+        <div class="icon">📄</div>
+        <h3>5 output formats</h3>
+        <p>JSON, SARIF, Markdown, text, and HTML. JSON Schema (draft 2020-12) for downstream tooling.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="quickstart">
+  <div class="container">
+    <h2>Quick start</h2>
+    <div class="terminal">
+      <div class="terminal-header">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="terminal-title">terminal</span>
+      </div>
+      <pre><code><span class="prompt">$</span> sentinel scan --path . --format text
+
+crate                          version       score class      pony source
+itoa                           1.0.18         0.00 Safe        1    CratesIoOwners
+serde                          1.0.229        0.00 Safe        1    CratesIoOwners
+time                           0.1.44        1.80 Watch       2    CratesIoOwners</code></pre>
+    </div>
+  </div>
+</section>
+
+<section class="action">
+  <div class="container">
+    <h2>GitHub Action</h2>
+    <p class="section-lead">Add one line to your workflow and let Sentinel block risky merges.</p>
+    <pre class="yaml"><code>- uses: <span class="str">developerfred/soroban-dependency-sentinel@v1</span>
+  with:
+    fail-on: <span class="str">high</span>
+    upload-sarif: <span class="str">"true"</span></code></pre>
+  </div>
+</section>
+
+<section class="docs">
+  <div class="container">
+    <h2>Documentation</h2>
+    <div class="grid grid-3">
+      <a class="doc-card" href="api/sentinel/index.html">
+        <h3>📚 API reference</h3>
+        <p>Rustdoc for every public item.</p>
+      </a>
+      <a class="doc-card" href="https://github.com/developerfred/soroban-dependency-sentinel/blob/main/docs/INSTALL.md">
+        <h3>⚙️ Install guide</h3>
+        <p>crates.io, source, and Action.</p>
+      </a>
+      <a class="doc-card" href="https://github.com/developerfred/soroban-dependency-sentinel/blob/main/docs/CI-INTEGRATION.md">
+        <h3>🔁 CI integration</h3>
+        <p>GitHub, GitLab, baseline, offline.</p>
+      </a>
+      <a class="doc-card" href="https://github.com/developerfred/soroban-dependency-sentinel/blob/main/docs/ADR/0001-architecture.md">
+        <h3>🏗️ Architecture</h3>
+        <p>ADR 0001 — design decisions.</p>
+      </a>
+      <a class="doc-card" href="https://github.com/developerfred/soroban-dependency-sentinel/blob/main/AGENTS.md">
+        <h3>🤖 Agent harness</h3>
+        <p>AGENTS.md, 8 skills, 5 workflows.</p>
+      </a>
+      <a class="doc-card" href="https://github.com/developerfred/soroban-dependency-sentinel/releases">
+        <h3>🚀 Releases</h3>
+        <p>Changelog and version history.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>
+      <a href="https://github.com/developerfred/soroban-dependency-sentinel">GitHub</a> ·
+      <a href="https://crates.io/crates/soroban-dependency-sentinel">crates.io</a> ·
+      <a href="https://docs.rs/soroban-dependency-sentinel">docs.rs</a> ·
+      Apache-2.0
+    </p>
+    <p class="muted">Built with an agentic development harness.</p>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

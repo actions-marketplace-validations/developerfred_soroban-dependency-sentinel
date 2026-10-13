@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-13
+
 ### Part 10
 - `--format html` — standalone HTML report (no external assets).
 - `sentinel schema` — emit JSON Schema (draft 2020-12) of the scan output.
@@ -47,3 +49,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 3 GitHub Actions workflows (CI, QA gate, scheduled security scan).
 
 [Unreleased]: https://github.com/scf-public-goods/soroban-dependency-sentinel
+[0.2.0]: https://github.com/developerfred/soroban-dependency-sentinel/compare/v0.1.0...v0.2.0

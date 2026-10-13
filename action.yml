@@ -1,0 +1,86 @@
+name: 'Soroban Dependency Sentinel'
+description: 'Scan Soroban projects for CVEs and pony factor risks'
+author: 'developerfred'
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  path:
+    description: 'Path to the project to scan'
+    required: false
+    default: '.'
+  fail-on:
+    description: 'Fail threshold: none, watch, high, critical'
+    required: false
+    default: 'high'
+  upload-sarif:
+    description: 'Upload SARIF to GitHub Code Scanning'
+    required: false
+    default: 'true'
+  version:
+    description: 'Version of sentinel to install (e.g. "0.1.0" or "latest")'
+    required: false
+    default: 'latest'
+  deep-pony:
+    description: 'Enable git clone fallback for pony factor'
+    required: false
+    default: 'false'
+
+outputs:
+  sarif-file:
+    description: 'Path to the generated SARIF file'
+    value: ${{ steps.scan.outputs.sarif-file }}
+  exit-code:
+    description: 'Exit code of the scan step (0 = no findings above threshold)'
+    value: ${{ steps.scan.outputs.exit-code }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install sentinel
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ "${{ inputs.version }}" = "latest" ]; then
+          cargo install --git https://github.com/developerfred/soroban-dependency-sentinel --locked
+        else
+          cargo install soroban-dependency-sentinel --version "${{ inputs.version }}" --locked
+        fi
+
+    - name: Scan
+      id: scan
+      shell: bash
+      continue-on-error: true
+      run: |
+        set +e
+        mkdir -p .sentinel
+        SARIF=".sentinel/report.sarif"
+        EXTRA=""
+        if [ "${{ inputs.deep-pony }}" = "true" ]; then
+          EXTRA="--deep-pony"
+        fi
+        sentinel scan \
+          --path "${{ inputs.path }}" \
+          --format sarif \
+          --fail-on "${{ inputs.fail-on }}" \
+          $EXTRA > "$SARIF"
+        EXIT=$?
+        echo "sarif-file=$SARIF" >> "$GITHUB_OUTPUT"
+        echo "exit-code=$EXIT" >> "$GITHUB_OUTPUT"
+
+    - name: Upload SARIF
+      if: always() && inputs.upload-sarif == 'true'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif-file }}
+
+    - name: Propagate scan failure
+      if: steps.scan.outputs.exit-code != '0'
+      shell: bash
+      run: |
+        echo "::error::sentinel found issues at or above the configured threshold"
+        exit 1

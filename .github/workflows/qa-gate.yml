@@ -1,0 +1,20 @@
+name: QA Gate
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - run: cargo llvm-cov --all --json --output-path coverage.json
+      - name: Enforce coverage >= 80%
+        run: |
+          P=$(jq '.data[0].totals.lines.percent' coverage.json)
+          echo "coverage = ${P}%"
+          awk -v p="$P" 'BEGIN{exit !(p>=80)}' || { echo "❌ below 80%"; exit 1; }

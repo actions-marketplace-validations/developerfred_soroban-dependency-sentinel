@@ -1,0 +1,46 @@
+[package]
+name = "soroban-dependency-sentinel"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "Apache-2.0"
+description = "Supply-chain security scanner for Soroban projects (CVE + pony factor + mitigation)"
+repository = "https://github.com/developerfred/soroban-dependency-sentinel"
+homepage = "https://github.com/developerfred/soroban-dependency-sentinel"
+documentation = "https://docs.rs/soroban-dependency-sentinel"
+readme = "README.md"
+keywords = ["stellar", "soroban", "security", "supply-chain", "rustsec"]
+categories = ["command-line-utilities", "development-tools"]
+
+[[bin]]
+name = "sentinel"
+path = "src/main.rs"
+
+[lib]
+name = "sentinel"
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive"] }
+hex = "0.4"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+tempfile = "3"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+toml = "0.8"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

@@ -1,0 +1,7 @@
+/target
+**/*.rs.bk
+coverage.json
+*.sarif
+.DS_Store
+.sentinel/
+docs/scf/

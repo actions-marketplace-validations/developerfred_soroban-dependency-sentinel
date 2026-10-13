@@ -9,8 +9,11 @@ pub mod crates_io;
 pub mod markdown;
 pub mod pg_atlas;
 pub mod planner;
+pub mod plugins;
+pub mod report_html;
 pub mod reporter;
 pub mod scanner;
+pub mod schema;
 pub mod scorer;
 pub mod wizard;
 

@@ -69,6 +69,8 @@ time                           0.1.44        1.80 Watch       2    CratesIoOwner
 | `sentinel scan` | Scan a project for CVEs and pony risks |
 | `sentinel explain <ID>` | Fetch an advisory from OSV.dev |
 | `sentinel wizard` | Generate `sentinel.toml` + GitHub Action |
+| `sentinel schema` | Emit the JSON Schema of the scan output |
+| `sentinel plugins` | List installed `sentinel-plugin-*` executables |
 
 ### Common flags
 
@@ -124,6 +126,40 @@ sentinel wizard
 - **json** — machine-readable, stable schema
 - **sarif** — SARIF 2.1.0, compatible with GitHub Code Scanning
 - **markdown** — for PR comments
+- **html** — standalone report (opens in a browser)
+
+## Plugins
+
+Sentinel auto-discovers `sentinel-plugin-*` executables in `PATH`. Each plugin
+is called as:
+
+```bash
+sentinel-plugin-<name> --scan /path/to/project
+```
+
+and must print a JSON array on stdout:
+
+```json
+[{"crate_name":"serde","id":"PLUGIN-1","summary":"...","severity":"HIGH"}]
+```
+
+Findings are merged into the crate's vulnerability list. Use `--no-plugins`
+to disable discovery.
+
+List installed plugins:
+
+```bash
+sentinel plugins
+```
+
+## JSON Schema
+
+```bash
+sentinel schema > dependency-report.schema.json
+```
+
+The output follows [JSON Schema draft 2020-12](https://json-schema.org/draft/2020-12/)
+and can be used to validate scan output in downstream tools.
 
 ## Development
 

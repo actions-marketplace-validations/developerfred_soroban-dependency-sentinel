@@ -5,3 +5,5 @@ coverage.json
 .DS_Store
 .sentinel/
 docs/scf/
+qa.sh
+deploy.sh

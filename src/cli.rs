@@ -1,6 +1,6 @@
 use crate::reporter::{self, ScanOptions};
 use crate::scorer::Classification;
-use crate::{baseline, config::Config, markdown};
+use crate::{baseline, config::Config, markdown, plugins, report_html, schema};
 use anyhow::Result;
 use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
@@ -19,7 +19,8 @@ pub enum Cmd {
         #[arg(long, default_value = ".")]
         path: PathBuf,
 
-        #[arg(long, default_value = "json", value_parser = ["json", "sarif", "text", "markdown"])]
+        #[arg(long, default_value = "json",
+              value_parser = ["json", "sarif", "markdown", "text", "html"])]
         format: String,
 
         #[arg(long, default_value_t = false)]
@@ -28,16 +29,16 @@ pub enum Cmd {
         #[arg(long, default_value_t = false)]
         include_local: bool,
 
-        /// Skip all network requests; use only the local cache.
         #[arg(long, default_value_t = false)]
         offline: bool,
 
-        /// Compare against a previous scan (JSON file) and fail only on regressions.
+        /// Disable plugin discovery and execution.
+        #[arg(long, default_value_t = false)]
+        no_plugins: bool,
+
         #[arg(long)]
         baseline: Option<PathBuf>,
 
-        /// Exit code 1 if any dependency reaches this classification.
-        /// Overrides sentinel.toml when set.
         #[arg(long, value_enum)]
         fail_on: Option<FailLevel>,
     },
@@ -53,10 +54,15 @@ pub enum Cmd {
         #[arg(long, default_value = ".")]
         path: PathBuf,
 
-        /// Skip prompts and write defaults.
         #[arg(long, default_value_t = false)]
         yes: bool,
     },
+
+    /// Emit the JSON Schema of the scan output (draft 2020-12).
+    Schema,
+
+    /// List installed `sentinel-plugin-*` executables.
+    Plugins,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -104,6 +110,7 @@ pub fn run(cli: Cli) -> Result<()> {
             deep_pony,
             include_local,
             offline,
+            no_plugins,
             baseline,
             fail_on,
         } => {
@@ -111,6 +118,7 @@ pub fn run(cli: Cli) -> Result<()> {
                 deep_pony,
                 include_local,
                 offline,
+                no_plugins,
             };
             let report = reporter::scan_project_with(&path, opts)?;
 
@@ -121,10 +129,10 @@ pub fn run(cli: Cli) -> Result<()> {
                     serde_json::to_string_pretty(&reporter::to_sarif(&report))?
                 ),
                 "markdown" => print!("{}", markdown::render(&report)),
+                "html" => print!("{}", report_html::render(&report)),
                 _ => reporter::print_text(&report),
             }
 
-            // Baseline mode: fail only on regressions.
             if let Some(baseline_path) = baseline {
                 let base = baseline::load(&baseline_path)?;
                 let regs = baseline::diff(&report, &base);
@@ -139,7 +147,6 @@ pub fn run(cli: Cli) -> Result<()> {
                 return Ok(());
             }
 
-            // Fail-level: CLI flag wins; otherwise sentinel.toml; otherwise none.
             let cfg = Config::load(&path).unwrap_or_default();
             let level = fail_on.unwrap_or_else(|| parse_fail_level(&cfg.scan.fail_on));
             let threshold = level.rank();
@@ -164,5 +171,26 @@ pub fn run(cli: Cli) -> Result<()> {
         }
 
         Cmd::Wizard { path, yes } => crate::wizard::run(&path, yes),
+
+        Cmd::Schema => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&schema::dependency_report_schema())?
+            );
+            Ok(())
+        }
+
+        Cmd::Plugins => {
+            let discovered = plugins::discover();
+            if discovered.is_empty() {
+                println!("(no sentinel-plugin-* executables found in PATH)");
+            } else {
+                println!("{:<20} PATH", "NAME");
+                for p in discovered {
+                    println!("{:<20} {}", p.name, p.path.display());
+                }
+            }
+            Ok(())
+        }
     }
 }

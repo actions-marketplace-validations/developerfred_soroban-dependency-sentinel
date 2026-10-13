@@ -1,18 +1,20 @@
 //! Output formats + top-level orchestration.
 
 use crate::{
-    analyzer, config::Config, crates_io, pg_atlas, planner, scanner, scorer, DependencyReport,
-    PonySource,
+    analyzer, config::Config, crates_io, pg_atlas, planner, plugins, scanner, scorer,
+    DependencyReport, PonySource,
 };
 use anyhow::Result;
 use serde_json::json;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct ScanOptions {
     pub deep_pony: bool,
     pub include_local: bool,
     pub offline: bool,
+    /// Disable plugin discovery and execution.
+    pub no_plugins: bool,
 }
 
 pub fn scan_project(path: &Path) -> Result<Vec<DependencyReport>> {
@@ -30,6 +32,13 @@ async fn scan_project_async(path: &Path, opts: ScanOptions) -> Result<Vec<Depend
     let local_name = read_local_package_name(path).ok();
     let mut reports = Vec::with_capacity(deps.len());
 
+    // Discover + run plugins (unless disabled).
+    let plugin_findings = if opts.no_plugins {
+        vec![]
+    } else {
+        run_plugins(path)
+    };
+
     for (name, version) in deps {
         if !opts.include_local && Some(&name) == local_name.as_ref() {
             continue;
@@ -43,6 +52,13 @@ async fn scan_project_async(path: &Path, opts: ScanOptions) -> Result<Vec<Depend
             .await
             .unwrap_or_default();
         vulns.retain(|v| !cfg.is_advisory_ignored(&v.id));
+
+        // Merge plugin findings for this crate.
+        for (plugin_name, finding) in &plugin_findings {
+            if finding.crate_name == name {
+                vulns.push(plugins::finding_to_vulnerability(finding, plugin_name));
+            }
+        }
 
         let (pony_factor, pony_source) = resolve_pony(&name, opts.deep_pony, opts.offline).await;
 
@@ -75,9 +91,31 @@ async fn scan_project_async(path: &Path, opts: ScanOptions) -> Result<Vec<Depend
     Ok(reports)
 }
 
+/// Run all discovered plugins; ignore individual failures with a warning.
+fn run_plugins(project: &Path) -> Vec<(String, plugins::PluginFinding)> {
+    let mut out = Vec::new();
+    for p in plugins::discover() {
+        match plugins::run(&p, project) {
+            Ok(findings) => {
+                tracing::info!(
+                    plugin = %p.name,
+                    count = findings.len(),
+                    "plugin completed"
+                );
+                for f in findings {
+                    out.push((p.name.clone(), f));
+                }
+            }
+            Err(e) => {
+                tracing::warn!(plugin = %p.name, error = %e, "plugin failed");
+            }
+        }
+    }
+    out
+}
+
 async fn resolve_pony(name: &str, deep: bool, offline: bool) -> (Option<u32>, PonySource) {
     if offline {
-        // Offline: skip network; assume Unknown.
         return (None, PonySource::Unknown);
     }
 
@@ -193,6 +231,9 @@ pub async fn explain_advisory(id: &str) -> Result<()> {
     println!("{}", serde_json::to_string_pretty(&body)?);
     Ok(())
 }
+
+#[allow(dead_code)]
+fn _keep_pathbuf(_: PathBuf) {}
 
 #[cfg(test)]
 mod tests {

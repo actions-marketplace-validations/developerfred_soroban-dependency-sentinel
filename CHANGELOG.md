@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Part 10
+- `--format html` — standalone HTML report (no external assets).
+- `sentinel schema` — emit JSON Schema (draft 2020-12) of the scan output.
+- `sentinel plugins` — list `sentinel-plugin-*` executables in `PATH`.
+- Plugin system: findings auto-merged into the report (`src/plugins.rs`).
+- `--no-plugins` flag to disable plugin discovery.
+- `.github/workflows/docs.yml` — publish docs to GitHub Pages.
+- New modules: `src/report_html.rs`, `src/schema.rs`, `src/plugins.rs`.
+
 ### Part 9
 - Interactive `sentinel wizard`.
 - Composite GitHub Action (`action.yml`) — reusable in one line.
